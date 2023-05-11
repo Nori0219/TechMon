@@ -12,6 +12,7 @@ class BattleViewController: UIViewController {
     @IBOutlet var playerNameLabel: UILabel!
     @IBOutlet var playerImageView: UIImageView!
     @IBOutlet var playerHPBar: UIProgressView!
+    @IBOutlet var playerTPLabel: UILabel!
     
     @IBOutlet var enemyNameLabel: UILabel!
     @IBOutlet var enemyImageView: UIImageView!
@@ -32,7 +33,7 @@ class BattleViewController: UIViewController {
         enemyHPBar.transform = CGAffineTransform(scaleX: 1.0, y: 4.0)
         
         //プレイヤーと敵のステータスを設定
-        player =  Player(name: "勇者", imageName: "yusya.png", attackPoint: 20, maxHP: 100)
+        player =  Player(name: "勇者", imageName: "yusya.png", attackPoint: 20, fireAttackPoint: 150, maxHP: 100 , maxTP: 100)
         enemy =  Enemy(name: "ドラゴン", imageName: "monster.png", attackPoint: 10, maxHP: 300)
         
         playerNameLabel.text = player.name
@@ -40,6 +41,8 @@ class BattleViewController: UIViewController {
         
         enemyNameLabel.text = enemy.name
         enemyImageView.image = enemy.image
+        
+        playerTPLabel.text = "\(player.currentTP) / \(player.maxTP)"
         
         //画面更新
         updateUI()
@@ -67,6 +70,7 @@ class BattleViewController: UIViewController {
     func updateUI() {
         playerHPBar.progress = player.currentHP / player.maxHP
         enemyHPBar.progress = enemy.currentHP / enemy.maxHP
+        playerTPLabel.text = "\(player.currentTP) / \(player.maxTP)"
     }
     
     //攻撃
@@ -76,8 +80,46 @@ class BattleViewController: UIViewController {
         
         //攻撃でダメージを与える
         enemy.currentHP -= player.attackPoint
+        
+        //TPを貯める
+        player.currentTP += 5
+        print(player.currentTP)
+        
+        if player.currentTP >= player.maxTP {
+            player.currentTP = player.maxTP
+        }
+        
         updateUI()
         
+        //プレイヤーの勝利
+        if enemy.currentHP <= 0 {
+            finishBattle(vanishImageView: enemyImageView, isPlayerWin: true)
+        }
+    }
+    
+    //ためる
+    @IBAction func chargeAction() {
+        TechMonManager.playSE(fileName: "SE_charge")
+        
+        player.currentTP += 20
+        if player.currentTP >= player.maxTP {
+            player.currentTP = player.maxTP
+        }
+        print(player.currentTP)
+        updateUI()
+    }
+    
+    //ファイア
+    @IBAction func fireAction() {
+        if player.currentTP >= player.maxTP {
+            TechMonManager.damageAnimation(imageView: enemyImageView)
+            TechMonManager.playSE(fileName: "SE_fire")
+            
+            //ファイアでダメージを与える
+            enemy.currentHP -= player.fireAttackPoint
+            player.currentTP = 0
+        }
+        updateUI()
         //プレイヤーの勝利
         if enemy.currentHP <= 0 {
             finishBattle(vanishImageView: enemyImageView, isPlayerWin: true)
@@ -93,7 +135,7 @@ class BattleViewController: UIViewController {
         player.currentHP -= enemy.attackPoint
         updateUI()
         
-        //プレイヤーの勝利
+        //敵の勝利
         if player.currentHP <= 0 {
             finishBattle(vanishImageView: playerImageView, isPlayerWin: false)
         }
